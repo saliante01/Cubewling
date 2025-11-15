@@ -2,8 +2,8 @@ using UnityEngine;
 
 public abstract class BloqueBase : MonoBehaviour
 {
-    public int x;
-    public int y;
+    public int x = 0;
+    public int y = 0;
 
     public TableroManagerPosicional tablero;
 

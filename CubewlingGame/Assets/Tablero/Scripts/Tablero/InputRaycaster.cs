@@ -12,10 +12,10 @@ public class InputRaycaster : MonoBehaviour
 
             if (Physics.Raycast(ray, out RaycastHit hit, 100f))
             {
-                BloqueBase b = hit.collider.GetComponent<BloqueBase>();
-                if (b != null)
+                BloqueBase bloque = hit.collider.GetComponent<BloqueBase>();
+                if (bloque != null)
                 {
-                    tablero.PedirExplosion(b);
+                    bloque.Activar();
                 }
             }
         }
