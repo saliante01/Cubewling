@@ -158,28 +158,44 @@ public class TableroManagerPosicional : MonoBehaviour
     //   4. FUNCIONALIDAD DEL AMARILLO – ROMPER FILA COMPLETA
     // ======================================================================
     public void RomperFila(BloqueBase amarillo)
+{
+    float filaZ = amarillo.transform.position.z;
+
+    List<BloqueBase> filaAEliminar = new List<BloqueBase>();
+
+    // 1. Recolectar sin destruir
+    foreach (var b in bloques)
     {
-        float filaZ = amarillo.transform.position.z;
-
-        List<BloqueBase> filaAEliminar = new List<BloqueBase>();
-
-        foreach (var b in bloques)
-        {
-            if (Mathf.Abs(b.transform.position.z - filaZ) < 0.1f)
-                filaAEliminar.Add(b);
-        }
-
-        foreach (var b in filaAEliminar)
-        {
-            bloques.Remove(b);
-
-            if (b is BloqueHierro)
-                cola.Enqueue(b);
-
-            Destroy(b.gameObject);
-        }
-
-        // Procesar las explosiones en cadena
-        ProcesarExplosiones();
+        if (b != null && Mathf.Abs(b.transform.position.z - filaZ) < 0.1f)
+            filaAEliminar.Add(b);
     }
+
+    // 2. Remover de la lista global
+    foreach (var b in filaAEliminar)
+    {
+        bloques.Remove(b);
+    }
+
+    // 3. Procesar funcionalidad antes de destruir
+    foreach (var b in filaAEliminar)
+    {
+        if (b is BloqueHierro)
+            cola.Enqueue(b);
+
+        // Si fuera Amarillo extra (por explosión previa)
+        if (b is AmarilloCube && b != amarillo)
+            RomperFila(b); // romper su otra fila también
+    }
+
+    // 4. Ahora sí destruir (sin loops sobre transform)
+    foreach (var b in filaAEliminar)
+    {
+        if (b != null)
+            Destroy(b.gameObject);
+    }
+
+    // 5. Explosiones en cadena del hierro
+    ProcesarExplosiones();
+}
+
 }
