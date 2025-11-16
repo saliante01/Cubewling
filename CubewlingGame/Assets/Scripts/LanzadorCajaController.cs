@@ -9,11 +9,19 @@ public class LanzadorCajaController : MonoBehaviour
 
     [Header("Carga de potencia")]
     public KeyCode powerKey = KeyCode.Space;
+
+    [Tooltip("Potencia máxima que se puede cargar")]
     public float maxPower = 20f;
+
+    [Tooltip("Velocidad a la que aumenta la potencia por segundo")]
     public float powerChargeSpeed = 10f;
 
-    private float currentPower = 0f;
+    [Header("DEBUG (solo lectura)")]
+    [SerializeField] private float currentPower = 0f;
+
     private bool hasLaunched = false;
+    private bool isCharging = false;     // si realmente está cargando
+    private bool maxReached = false;     // llegó al máximo y se congela
 
     private FisicasCaja boxPhysics;
 
@@ -22,7 +30,7 @@ public class LanzadorCajaController : MonoBehaviour
         boxPhysics = GetComponent<FisicasCaja>();
 
         if (boxPhysics == null)
-            Debug.LogError("BoxPhysics no est� adjunto al mismo objeto.");
+            Debug.LogError("FisicasCaja no está adjunto.");
     }
 
     private void Update()
@@ -51,14 +59,39 @@ public class LanzadorCajaController : MonoBehaviour
 
     private void HandlePowerCharge()
     {
-        if (Input.GetKey(powerKey))
+        // ==== INICIO CARGA ====
+        if (Input.GetKeyDown(powerKey))
         {
-            currentPower += powerChargeSpeed * Time.deltaTime;
-            currentPower = Mathf.Clamp(currentPower, 0, maxPower);
+            isCharging = true;
+            maxReached = false;
+            currentPower = 0f;
         }
 
+        // ==== MIENTRAS SE MANTIENE PRESIONADO ====
+        if (Input.GetKey(powerKey) && isCharging)
+        {
+            // Si ya llegó al máximo, NO recalculamos más
+            if (maxReached)
+            {
+                currentPower = maxPower;
+                return;
+            }
+
+            // Aumentar potencia
+            currentPower += powerChargeSpeed * Time.deltaTime;
+
+            if (currentPower >= maxPower)
+            {
+                currentPower = maxPower;
+                maxReached = true;
+            }
+        }
+
+        // ==== AL SOLTAR ====
         if (Input.GetKeyUp(powerKey))
         {
+            isCharging = false;
+
             Launch();
         }
     }
@@ -66,8 +99,16 @@ public class LanzadorCajaController : MonoBehaviour
     private void Launch()
     {
         hasLaunched = true;
-
-        // Llama a la f�sica para aplicar la fuerza real
         boxPhysics.ApplyLaunchForce(currentPower);
+    }
+
+    public void ResetLaunch()
+    {
+        hasLaunched = false;
+
+        // reset del ciclo de carga
+        isCharging = false;
+        maxReached = false;
+        currentPower = 0f;
     }
 }

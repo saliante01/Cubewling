@@ -2,19 +2,18 @@ using UnityEngine;
 using System;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Collider))]
 public class DetectorCajaDetenida : MonoBehaviour
 {
-    [Header("Deteccion de detencion")]
-    public float stopVelocityThreshold = 0.05f;     // Velocidad minima para considerar detenido
-    public float requiredStopTime = 0.5f;           // Tiempo que debe mantenerse detenido
+    [Header("Detección de detención")]
+    public float stopVelocityThreshold = 0.05f;
+    public float requiredStopTime = 0.5f;
 
     private float stopTimer = 0f;
     private Rigidbody rb;
     private bool hasNotified = false;
-
     private bool detectionEnabled = false;
 
-    // Evento para notificar a otros scripts
     public event Action OnBoxStopped;
 
     private void Start()
@@ -24,9 +23,9 @@ public class DetectorCajaDetenida : MonoBehaviour
 
     private void Update()
     {
-        if (!detectionEnabled || hasNotified) return;
+        if (!detectionEnabled || hasNotified)
+            return;
 
-        // comprobar si la velocidad es "casi cero"
         if (rb.linearVelocity.magnitude < stopVelocityThreshold)
         {
             stopTimer += Time.deltaTime;
@@ -34,15 +33,44 @@ public class DetectorCajaDetenida : MonoBehaviour
             if (stopTimer >= requiredStopTime)
             {
                 hasNotified = true;
-                print("La caja se ha detenido.");
-                // Lanzar el evento
+
                 OnBoxStopped?.Invoke();
+
+                ExplodeTouchedBlocksAtStop();
+
+                Invoke(nameof(ResetBoxDelayed), 0.15f);
             }
         }
         else
         {
-            stopTimer = 0f; // la caja volvio a moverse
+            stopTimer = 0f;
         }
+    }
+
+    private void ExplodeTouchedBlocksAtStop()
+    {
+        Collider col = GetComponent<Collider>();
+
+        Vector3 center = col.bounds.center;
+        Vector3 halfExtents = col.bounds.extents * 1.1f;
+
+        Collider[] hits = Physics.OverlapBox(center, halfExtents, transform.rotation);
+
+        foreach (Collider h in hits)
+        {
+            BloqueBase b = h.GetComponent<BloqueBase>();
+            if (b != null)
+                b.Activar();
+        }
+    }
+
+    private void ResetBoxDelayed()
+    {
+        FisicasCaja fc = GetComponent<FisicasCaja>();
+        if (fc != null)
+            fc.ResetBox();
+
+        EnableDetection();
     }
 
     public void EnableDetection()
