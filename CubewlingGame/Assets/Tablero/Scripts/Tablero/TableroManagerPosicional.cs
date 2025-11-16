@@ -21,7 +21,7 @@ public class TableroManagerPosicional : MonoBehaviour
     public float tiempoBajada = 0.15f;
 
     [Header("Efectos Visuales")]
-    public GameObject vfxExplosion;   // <= 🔥 VFX agregado
+    public GameObject vfxExplosion;
 
     public List<BloqueBase> bloques = new List<BloqueBase>();
 
@@ -134,26 +134,21 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 5. Destrucción individual (Normal) + VFX
+    // Destrucción normal + VFX
     // ============================================================
     public void NotificarBloqueDestruido(BloqueBase b)
     {
         int f = b.rowIndex;
 
-        // Quitar de listas
         bloques.Remove(b);
         filas[f].Remove(b);
 
-        // ==== 💥 VFX de explosión ====
         if (vfxExplosion != null)
         {
             GameObject fx = Instantiate(vfxExplosion, b.transform.position, Quaternion.identity);
-
-            // Si tu VFX no se autodestruye
             Destroy(fx, 2f);
         }
 
-        // Destruir el cubo real
         Destroy(b.gameObject);
 
         Debug.Log($"[TABLERO] Bloque destruido en fila {f}. Quedan {filas[f].Count}.");
@@ -163,7 +158,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 6. Amarillo rompe fila
+    // Amarillo rompe fila COMPLETA
     // ============================================================
     public void RomperFilaDesdeAmarillo(BloqueBase amarillo)
     {
@@ -172,7 +167,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 7. Explosión en cadena (Hierro)
+    // Explosión en cadena (Hierro)
     // ============================================================
     public void PedirExplosion(BloqueBase b)
     {
@@ -215,7 +210,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 8. Colapso tipo Tetris
+    // Colapso tipo Tetris (ahora activando hierros antes de destruir)
     // ============================================================
     IEnumerator ColapsarFilaCoroutine(int filaObjetivo, string motivo)
     {
@@ -226,16 +221,34 @@ public class TableroManagerPosicional : MonoBehaviour
 
         Debug.Log($"[TABLERO] >>> Fila {filaObjetivo} se destruye ({motivo})");
 
-        // Eliminar bloques restantes con VFX incluído
-    foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
-    {
-        NotificarBloqueDestruido(b);   // 🔥 ahora sí aparece el VFX
-    }
+        // ============================================================
+        // 1) ACTIVAR HIERROS ANTES DE DESTRUIR NADA
+        // ============================================================
+        foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
+        {
+            if (b is BloqueHierro)
+            {
+                b.Activar();  // activa explosión en cadena
+            }
+        }
 
+        yield return null; // permite procesar explosiones
+
+        // ============================================================
+        // 2) DESTRUIR LO QUE QUEDE EN LA FILA
+        // ============================================================
+        foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
+        {
+            if (b != null)
+                NotificarBloqueDestruido(b);
+        }
 
         if (tiempoAntesDeBajar > 0f)
             yield return new WaitForSeconds(tiempoAntesDeBajar);
 
+        // ============================================================
+        // BAJADA DE FILAS
+        // ============================================================
         List<BloqueBase> movidos = new List<BloqueBase>();
         List<Vector3> start = new List<Vector3>();
         List<Vector3> target = new List<Vector3>();
@@ -294,7 +307,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 9. Refill
+    // Refill
     // ============================================================
     IEnumerator RefillFilasVacias()
     {
@@ -329,9 +342,7 @@ public class TableroManagerPosicional : MonoBehaviour
         LogEstadoFilas("Después del refill");
     }
 
-    // ============================================================
-    // 10. Animación pop-in
-    // ============================================================
+    // Animación pop-in
     IEnumerator AnimarSpawn(Transform t, Vector3 escalaFinal)
     {
         Vector3 escalaInicial = Vector3.zero;
