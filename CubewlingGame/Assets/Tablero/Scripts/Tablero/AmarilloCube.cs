@@ -4,6 +4,9 @@ public class AmarilloCube : BloqueBase
 {
     public override void Activar()
     {
-        tablero.RomperFila(this);
+        if (tablero != null)
+        {
+            tablero.RomperFilaDesdeAmarillo(this);
+        }
     }
 }

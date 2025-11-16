@@ -4,6 +4,9 @@ public class BloqueHierro : BloqueBase
 {
     public override void Activar()
     {
-        tablero.PedirExplosion(this);
+        if (tablero != null)
+        {
+            tablero.PedirExplosion(this);
+        }
     }
 }

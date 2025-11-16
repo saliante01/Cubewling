@@ -9,7 +9,8 @@ public class BloqueBase : MonoBehaviour
     public BloqueBase vecinoIzquierda;
     public BloqueBase vecinoDerecha;
 
-    public int rowIndex; // fila a la que pertenece este bloque
+    // ID lógico de fila: 0 = más baja, 5 = más alta
+    public int rowIndex; 
 
     public virtual void Activar() { }
 }

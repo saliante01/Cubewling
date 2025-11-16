@@ -4,6 +4,9 @@ public class NormalCube : BloqueBase
 {
     public override void Activar()
     {
-        Destroy(gameObject);
+        if (tablero != null)
+        {
+            tablero.NotificarBloqueDestruido(this);
+        }
     }
 }
