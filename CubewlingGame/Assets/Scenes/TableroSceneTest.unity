@@ -483,8 +483,8 @@ MonoBehaviour:
   prefabAmarillo: {fileID: 6122005167838141859, guid: 9b0f530abf06ddd449ced2330ece57b4, type: 3}
   probabilidadHierro: 0.1
   probabilidadAmarillo: 0.1
-  tiempoAntesDeBajar: 1
-  tiempoBajada: 0.5
+  tiempoAntesDeBajar: 0.5
+  tiempoBajada: 0.2
   bloques: []
 --- !u!1 &376432041
 GameObject:

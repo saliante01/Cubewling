@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TableroManagerPosicional : MonoBehaviour
 {
-    [Header("PADRE con N hijos (uno por fila, de 0 abajo a N-1 arriba)")]
+    [Header("Contenedor principal: hijos = filas (0 abajo, N-1 arriba)")]
     public Transform contenedorPrincipalFilas;
 
     [Header("Prefabs")]
@@ -17,91 +17,101 @@ public class TableroManagerPosicional : MonoBehaviour
     [Range(0, 1f)] public float probabilidadAmarillo = 0.1f;
 
     [Header("Tiempos")]
-    public float tiempoAntesDeBajar = 0.3f;
-    public float tiempoBajada = 0.4f;
+    public float tiempoAntesDeBajar = 0.25f;
+    public float tiempoBajada = 0.15f;
 
-    // Lista global de bloques
     public List<BloqueBase> bloques = new List<BloqueBase>();
 
-    // Filas lógicas fijas: índice = ID de fila (0 = abajo, N-1 = arriba)
+    // Filas lógicas fijas
     private List<List<BloqueBase>> filas = new List<List<BloqueBase>>();
 
-    // Explosiones
+    // Marcadores exactos de cada fila y columna
+    private List<List<Transform>> marcadores = new List<List<Transform>>();
+
     private Queue<BloqueBase> cola = new Queue<BloqueBase>();
     private HashSet<BloqueBase> procesados = new HashSet<BloqueBase>();
-
-    // Para evitar colapsar la misma fila más de una vez
     private HashSet<int> filasEnColapso = new HashSet<int>();
+
+    int TotalFilas => filas.Count;
 
     void Start()
     {
         InicializarEstructuraFilas();
         InstanciarBloquesTablero();
         DetectarVecinosPorDistancia();
-        LogEstadoFilas("Estado inicial del tablero");
+        LogEstadoFilas("Estado inicial");
     }
 
     // ============================================================
-    // 1. Inicializar estructura fija de filas (IDs)
+    // 1. Inicializar filas y marcadores
     // ============================================================
     void InicializarEstructuraFilas()
     {
         filas.Clear();
+        marcadores.Clear();
 
-        int totalFilas = contenedorPrincipalFilas.childCount;
-        for (int i = 0; i < totalFilas; i++)
+        int total = contenedorPrincipalFilas.childCount;
+
+        for (int filaID = 0; filaID < total; filaID++)
         {
             filas.Add(new List<BloqueBase>());
+
+            List<Transform> lista = new List<Transform>();
+            foreach (Transform m in contenedorPrincipalFilas.GetChild(filaID))
+                lista.Add(m);
+
+            marcadores.Add(lista);
         }
     }
 
-    int TotalFilas => filas.Count;
-
     // ============================================================
-    // 2. Instanciar bloques al inicio
+    // 2. Instanciar bloques iniciales con escala correcta
     // ============================================================
     void InstanciarBloquesTablero()
     {
         bloques.Clear();
 
-        // Suponemos que el hijo 0 del contenedor es la fila 0 (inferior),
-        // el hijo 1 la fila 1, etc.
-        for (int row = 0; row < contenedorPrincipalFilas.childCount; row++)
+        for (int filaID = 0; filaID < TotalFilas; filaID++)
         {
-            Transform filaContenedor = contenedorPrincipalFilas.GetChild(row);
-
-            foreach (Transform marcador in filaContenedor)
+            foreach (Transform m in marcadores[filaID])
             {
-                Vector3 pos = marcador.position;
-                GameObject prefabElegido = ElegirPrefabAleatorio();
-
-                GameObject obj = Instantiate(prefabElegido, pos, Quaternion.identity);
-                BloqueBase bloque = obj.GetComponent<BloqueBase>();
-
-                bloque.tablero = this;
-                bloque.rowIndex = row;
-
-                bloques.Add(bloque);
-                filas[row].Add(bloque);
+                BloqueBase nuevo = CrearBloqueEnFila(filaID, m.position, m);
+                filas[filaID].Add(nuevo);
+                bloques.Add(nuevo);
             }
         }
+    }
+
+    // ============================================================
+    // 3. Crear bloque correctamente alineado y con escala correcta
+    // ============================================================
+    BloqueBase CrearBloqueEnFila(int filaID, Vector3 pos, Transform marcador)
+    {
+        GameObject prefab = ElegirPrefabAleatorio();
+        GameObject obj = Instantiate(prefab, pos, Quaternion.identity);
+
+        // 🔥 Escala correcta según el marcador
+        obj.transform.localScale = marcador.localScale;
+
+        BloqueBase b = obj.GetComponent<BloqueBase>();
+        b.tablero = this;
+        b.rowIndex = filaID;
+
+        return b;
     }
 
     GameObject ElegirPrefabAleatorio()
     {
         float r = Random.value;
 
-        if (r < probabilidadAmarillo)
-            return prefabAmarillo;
-
-        if (r < probabilidadAmarillo + probabilidadHierro)
-            return prefabHierro;
+        if (r < probabilidadAmarillo) return prefabAmarillo;
+        if (r < probabilidadAmarillo + probabilidadHierro) return prefabHierro;
 
         return prefabNormal;
     }
 
     // ============================================================
-    // 3. Detectar vecinos por distancia (para Hierro)
+    // 4. Vecinos del bloque (hierro)
     // ============================================================
     void DetectarVecinosPorDistancia()
     {
@@ -137,61 +147,38 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 4. Notificación de destrucción de un bloque (Normales)
+    // 5. Destrucción individual (Normal)
     // ============================================================
-    public void NotificarBloqueDestruido(BloqueBase bloque)
+    public void NotificarBloqueDestruido(BloqueBase b)
     {
-        if (bloque == null) return;
+        int f = b.rowIndex;
 
-        int fila = bloque.rowIndex;
+        bloques.Remove(b);
+        filas[f].Remove(b);
 
-        bloques.Remove(bloque);
+        Destroy(b.gameObject);
 
-        if (fila >= 0 && fila < TotalFilas)
-        {
-            filas[fila].Remove(bloque);
+        Debug.Log($"[TABLERO] Bloque destruido en fila {f}. Quedan {filas[f].Count}.");
 
-            Debug.Log($"[TABLERO] Bloque {bloque.GetType().Name} destruido en fila {fila}. " +
-                      $"Quedan {filas[fila].Count} bloques en esa fila.");
-
-            Destroy(bloque.gameObject);
-
-            // Si la fila quedó vacía, se colapsa
-            if (filas[fila].Count == 0 && !filasEnColapso.Contains(fila))
-            {
-                StartCoroutine(ColapsarFilaCoroutine(fila, "FILA VACÍA (último bloque destruido)"));
-            }
-        }
-        else
-        {
-            Destroy(bloque.gameObject);
-        }
+        if (filas[f].Count == 0)
+            StartCoroutine(ColapsarFilaCoroutine(f, "FILA VACÍA"));
     }
 
     // ============================================================
-    // 5. Amarillo llamado directamente por click
+    // 6. Amarillo rompe fila
     // ============================================================
     public void RomperFilaDesdeAmarillo(BloqueBase amarillo)
     {
-        if (amarillo == null) return;
-        int fila = amarillo.rowIndex;
-
-        if (fila < 0 || fila >= TotalFilas) return;
-
-        if (!filasEnColapso.Contains(fila))
-        {
-            StartCoroutine(ColapsarFilaCoroutine(fila, "AMARILLO (click)"));
-        }
+        int f = amarillo.rowIndex;
+        StartCoroutine(ColapsarFilaCoroutine(f, "AMARILLO"));
     }
 
     // ============================================================
-    // 6. Explosiones en cadena (Hierro)
+    // 7. Explosión en cadena (Hierro)
     // ============================================================
-    public void PedirExplosion(BloqueBase bloque)
+    public void PedirExplosion(BloqueBase b)
     {
-        if (bloque == null) return;
-
-        cola.Enqueue(bloque);
+        cola.Enqueue(b);
         ProcesarExplosiones();
     }
 
@@ -204,35 +191,25 @@ public class TableroManagerPosicional : MonoBehaviour
 
             procesados.Add(actual);
 
-            // Si es amarillo afectado por explosión, rompe su fila
             if (actual is AmarilloCube)
             {
-                int filaAmarillo = actual.rowIndex;
-                if (filaAmarillo >= 0 && filaAmarillo < TotalFilas && !filasEnColapso.Contains(filaAmarillo))
-                {
-                    StartCoroutine(ColapsarFilaCoroutine(filaAmarillo, "AMARILLO (por explosión)"));
-                }
+                RomperFilaDesdeAmarillo(actual);
                 continue;
             }
 
-            // El resto de bloques se destruyen normalmente
-            int fila = actual.rowIndex;
-
-            // Guardar vecinos ANTES de destruir (solo si hierro)
-            BloqueBase arriba = actual.vecinoArriba;
-            BloqueBase abajo = actual.vecinoAbajo;
-            BloqueBase izq = actual.vecinoIzquierda;
-            BloqueBase der = actual.vecinoDerecha;
+            BloqueBase up = actual.vecinoArriba;
+            BloqueBase dn = actual.vecinoAbajo;
+            BloqueBase iz = actual.vecinoIzquierda;
+            BloqueBase de = actual.vecinoDerecha;
 
             NotificarBloqueDestruido(actual);
 
-            // Si era hierro, encola vecinos
             if (actual is BloqueHierro)
             {
-                if (arriba) cola.Enqueue(arriba);
-                if (abajo) cola.Enqueue(abajo);
-                if (izq) cola.Enqueue(izq);
-                if (der) cola.Enqueue(der);
+                if (up) cola.Enqueue(up);
+                if (dn) cola.Enqueue(dn);
+                if (iz) cola.Enqueue(iz);
+                if (de) cola.Enqueue(de);
             }
         }
 
@@ -240,138 +217,162 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 7. Corrutina de colapso de fila (tipo Tetris)
+    // 8. COLAPSO TIPO TETRIS CON ALINEACIÓN PERFECTA
     // ============================================================
     IEnumerator ColapsarFilaCoroutine(int filaObjetivo, string motivo)
     {
-        if (filaObjetivo < 0 || filaObjetivo >= TotalFilas)
-            yield break;
-
         if (filasEnColapso.Contains(filaObjetivo))
             yield break;
 
         filasEnColapso.Add(filaObjetivo);
 
-        Debug.Log($"[TABLERO] >>> Fila {filaObjetivo} se destruye. Motivo: {motivo}");
+        Debug.Log($"[TABLERO] >>> Fila {filaObjetivo} se destruye ({motivo})");
 
-        // 1) Borrar todos los bloques de esa fila (si aún quedaba alguno)
-        List<BloqueBase> filaAEliminar = new List<BloqueBase>(filas[filaObjetivo]);
-
-        foreach (var b in filaAEliminar)
+        // Eliminar bloques restantes
+        foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
         {
-            if (!b) continue;
-
             bloques.Remove(b);
             filas[filaObjetivo].Remove(b);
             Destroy(b.gameObject);
         }
 
-        // 2) Esperar antes de bajar
         if (tiempoAntesDeBajar > 0f)
             yield return new WaitForSeconds(tiempoAntesDeBajar);
 
-        // 3) Preparar animación de bajada de contenido
-        List<BloqueBase> bloquesAMover = new List<BloqueBase>();
-        List<Vector3> starts = new List<Vector3>();
-        List<Vector3> targets = new List<Vector3>();
+        List<BloqueBase> movidos = new List<BloqueBase>();
+        List<Vector3> start = new List<Vector3>();
+        List<Vector3> target = new List<Vector3>();
 
-        // Construir nueva estructura de filas
-        List<List<BloqueBase>> nuevasFilas = new List<List<BloqueBase>>();
+        List<List<BloqueBase>> nueva = new List<List<BloqueBase>>();
+
         for (int i = 0; i < TotalFilas; i++)
+            nueva.Add(new List<BloqueBase>());
+
+        // Filas inferiores se copian tal cual
+        for (int f = 0; f < filaObjetivo; f++)
+            foreach (var b in filas[f])
+                nueva[f].Add(b);
+
+        // Filas superiores bajan una fila
+        for (int f = filaObjetivo + 1; f < TotalFilas; f++)
         {
-            nuevasFilas.Add(new List<BloqueBase>());
-        }
+            int nuevoID = f - 1;
 
-        for (int f = 0; f < TotalFilas; f++)
-        {
-            if (f < filaObjetivo)
+            for (int col = 0; col < filas[f].Count; col++)
             {
-                // Filas por debajo quedan donde están
-                foreach (var b in filas[f])
-                {
-                    if (!b) continue;
-                    nuevasFilas[f].Add(b);
-                }
-            }
-            else if (f > filaObjetivo)
-            {
-                // Filas por encima bajan una posición
-                foreach (var b in filas[f])
-                {
-                    if (!b) continue;
+                BloqueBase b = filas[f][col];
+                b.rowIndex = nuevoID;
 
-                    int nuevaFila = f - 1;
-                    nuevasFilas[nuevaFila].Add(b);
-                    b.rowIndex = nuevaFila;
+                movidos.Add(b);
+                start.Add(b.transform.position);
 
-                    bloquesAMover.Add(b);
-                    starts.Add(b.transform.position);
-                    targets.Add(b.transform.position + new Vector3(0f, 0f, -1f)); // baja una unidad en Z
-                }
-            }
-            // f == filaObjetivo: esa fila se "pierde", será rellenada por la de arriba
-        }
+                Transform destino = marcadores[nuevoID][col];
+                target.Add(destino.position);
 
-        // La fila superior (ID más alto) queda vacía
-        // (nuevasFilas[TotalFilas - 1] ya está vacía porque nadie se mueve "para arriba")
-
-        // 4) Animación
-        float t = 0f;
-        if (tiempoBajada > 0f && bloquesAMover.Count > 0)
-        {
-            while (t < tiempoBajada)
-            {
-                t += Time.deltaTime;
-                float a = Mathf.Clamp01(t / tiempoBajada);
-
-                for (int i = 0; i < bloquesAMover.Count; i++)
-                {
-                    if (!bloquesAMover[i]) continue;
-                    bloquesAMover[i].transform.position = Vector3.Lerp(starts[i], targets[i], a);
-                }
-
-                yield return null;
+                nueva[nuevoID].Add(b);
             }
         }
 
-        // 5) Posición final por seguridad
-        for (int i = 0; i < bloquesAMover.Count; i++)
+        filas = nueva;
+
+        // Animación hacia los marcadores
+        float t = 0;
+        while (t < tiempoBajada)
         {
-            if (!bloquesAMover[i]) continue;
-            bloquesAMover[i].transform.position = targets[i];
+            t += Time.deltaTime;
+            float a = t / tiempoBajada;
+
+            for (int i = 0; i < movidos.Count; i++)
+                movidos[i].transform.position = Vector3.Lerp(start[i], target[i], a);
+
+            yield return null;
         }
 
-        // 6) Reemplazar estructura de filas
-        filas = nuevasFilas;
+        for (int i = 0; i < movidos.Count; i++)
+            movidos[i].transform.position = target[i];
 
-        // 7) Recalcular vecinos
         DetectarVecinosPorDistancia();
-
-        // 8) Log de estado final
         LogEstadoFilas($"Después de colapsar fila {filaObjetivo}");
 
         filasEnColapso.Remove(filaObjetivo);
+
+        StartCoroutine(RefillFilasVacias());
     }
 
     // ============================================================
-    // 8. Logs de estado de filas
+    // 9. Refill de filas vacías con escala correcta
     // ============================================================
-    void LogEstadoFilas(string contexto)
+    IEnumerator RefillFilasVacias()
+    {
+        List<int> vacias = new List<int>();
+
+        for (int i = 0; i < TotalFilas; i++)
+            if (filas[i].Count == 0)
+                vacias.Add(i);
+
+        if (vacias.Count == 0)
+            yield break;
+
+        Debug.Log($"[TABLERO] Rellenando filas vacías: {string.Join(",", vacias)}");
+
+        foreach (int filaID in vacias)
+        {
+            foreach (Transform m in marcadores[filaID])
+            {
+                BloqueBase nuevo = CrearBloqueEnFila(filaID, m.position, m);
+
+                // animación pop-in (desde 0 hasta la escala real)
+                Vector3 escalaFinal = m.localScale;
+                nuevo.transform.localScale = Vector3.zero;
+
+                StartCoroutine(AnimarSpawn(nuevo.transform, escalaFinal));
+
+                filas[filaID].Add(nuevo);
+                bloques.Add(nuevo);
+            }
+        }
+
+        DetectarVecinosPorDistancia();
+        LogEstadoFilas("Después del refill");
+    }
+
+    // ============================================================
+    // 10. Animación pop-in correcta (respeta escala final)
+    // ============================================================
+    IEnumerator AnimarSpawn(Transform t, Vector3 escalaFinal)
+    {
+        Vector3 escalaInicial = Vector3.zero;
+
+        float dur = 0.2f;
+        float tiempo = 0f;
+
+        while (tiempo < dur)
+        {
+            tiempo += Time.deltaTime;
+            float a = tiempo / dur;
+
+            t.localScale = Vector3.Lerp(escalaInicial, escalaFinal, a);
+
+            yield return null;
+        }
+
+        t.localScale = escalaFinal;
+    }
+
+    // ============================================================
+    // 11. Log del estado del tablero
+    // ============================================================
+    void LogEstadoFilas(string msg)
     {
         List<int> llenas = new List<int>();
         List<int> vacias = new List<int>();
 
         for (int i = 0; i < TotalFilas; i++)
         {
-            if (filas[i].Count > 0)
-                llenas.Add(i);
-            else
-                vacias.Add(i);
+            if (filas[i].Count > 0) llenas.Add(i);
+            else vacias.Add(i);
         }
 
-        string txtLlenas = llenas.Count > 0 ? string.Join(", ", llenas) : "ninguna";
-        string txtVacias = vacias.Count > 0 ? string.Join(", ", vacias) : "ninguna";
-
-        Debug.Log($"[TABLERO] {contexto} -> Filas con bloques: {txtLlenas} | Filas vacías: {txtVacias}");
+        Debug.Log($"[TABLERO] {msg} → Llenas: {string.Join(",", llenas)} | Vacías: {string.Join(",", vacias)}");
     }
 }
