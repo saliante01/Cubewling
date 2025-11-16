@@ -26,6 +26,7 @@ public class DetectorCajaDetenida : MonoBehaviour
         if (!detectionEnabled || hasNotified)
             return;
 
+        // ¿Está casi detenida?
         if (rb.linearVelocity.magnitude < stopVelocityThreshold)
         {
             stopTimer += Time.deltaTime;
@@ -33,11 +34,14 @@ public class DetectorCajaDetenida : MonoBehaviour
             if (stopTimer >= requiredStopTime)
             {
                 hasNotified = true;
+                Debug.Log("La caja se ha detenido.");
 
                 OnBoxStopped?.Invoke();
 
+                // Explosión de cubos tocados en ese instante
                 ExplodeTouchedBlocksAtStop();
 
+                // Respawn de la caja
                 Invoke(nameof(ResetBoxDelayed), 0.15f);
             }
         }
@@ -49,18 +53,23 @@ public class DetectorCajaDetenida : MonoBehaviour
 
     private void ExplodeTouchedBlocksAtStop()
     {
-        Collider col = GetComponent<Collider>();
+        Collider boxCol = GetComponent<Collider>();
 
-        Vector3 center = col.bounds.center;
-        Vector3 halfExtents = col.bounds.extents * 1.1f;
+        Vector3 center = boxCol.bounds.center;
+        Vector3 halfExtents = boxCol.bounds.extents * 1.1f;
 
         Collider[] hits = Physics.OverlapBox(center, halfExtents, transform.rotation);
 
-        foreach (Collider h in hits)
+        Debug.Log("CUBOS DETECTADOS: " + hits.Length);
+
+        foreach (Collider col in hits)
         {
-            BloqueBase b = h.GetComponent<BloqueBase>();
+            BloqueBase b = col.GetComponent<BloqueBase>();
             if (b != null)
+            {
+                Debug.Log("Activando cubo: " + b.name);
                 b.Activar();
+            }
         }
     }
 
@@ -69,8 +78,6 @@ public class DetectorCajaDetenida : MonoBehaviour
         FisicasCaja fc = GetComponent<FisicasCaja>();
         if (fc != null)
             fc.ResetBox();
-
-        EnableDetection();
     }
 
     public void EnableDetection()
