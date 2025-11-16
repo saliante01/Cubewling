@@ -138,7 +138,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // Destrucción normal + VFX + Sonido
+    // Destrucción normal + VFX + Sonido + PUNTOS
     // ============================================================
     public void NotificarBloqueDestruido(BloqueBase b)
     {
@@ -146,6 +146,17 @@ public class TableroManagerPosicional : MonoBehaviour
 
         bloques.Remove(b);
         filas[f].Remove(b);
+
+        // ==== SISTEMA DE PUNTOS ====
+        if (ScoreManager.Instance != null)
+        {
+            if (b is AmarilloCube)
+                ScoreManager.Instance.AddPoints(3);
+            else if (b is BloqueHierro)
+                ScoreManager.Instance.AddPoints(2);
+            else
+                ScoreManager.Instance.AddPoints(1);
+        }
 
         // ==== 💥 VFX ====
         if (vfxExplosion != null)
