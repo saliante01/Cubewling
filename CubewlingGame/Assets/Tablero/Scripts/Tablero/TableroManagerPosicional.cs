@@ -17,22 +17,24 @@ public class TableroManagerPosicional : MonoBehaviour
 
     public List<BloqueBase> bloques = new List<BloqueBase>();
 
-    // Cola para explosión en cadena
+    // Fila -> lista de cubos
+    private Dictionary<int, List<BloqueBase>> filas = new Dictionary<int, List<BloqueBase>>();
+
+    // Explosión en cadena
     public Queue<BloqueBase> cola = new Queue<BloqueBase>();
     public HashSet<BloqueBase> procesados = new HashSet<BloqueBase>();
 
 
-    // ======================================================================
     void Start()
     {
         InstanciarBloquesTablero();
         DetectarVecinosPorDistancia();
+        OrganizarFilas();
     }
 
-    // ======================================================================
-    //   1. GENERAR TABLERO PRINCIPAL ALEATORIO
-    // ======================================================================
-
+    // ============================================================
+    //   1. GENERAR TABLERO
+    // ============================================================
     void InstanciarBloquesTablero()
     {
         bloques.Clear();
@@ -46,6 +48,8 @@ public class TableroManagerPosicional : MonoBehaviour
 
             BloqueBase bloque = obj.GetComponent<BloqueBase>();
             bloque.tablero = this;
+
+            bloque.rowIndex = Mathf.RoundToInt(pos.z);
 
             bloques.Add(bloque);
         }
@@ -64,10 +68,25 @@ public class TableroManagerPosicional : MonoBehaviour
         return prefabNormal;
     }
 
-    // ======================================================================
-    //   2. DETECTAR VECINOS POR DISTANCIA EXACTA
-    // ======================================================================
+    // ============================================================
+    //   2. ORGANIZAR FILAS
+    // ============================================================
+    void OrganizarFilas()
+    {
+        filas.Clear();
 
+        foreach (var b in bloques)
+        {
+            if (!filas.ContainsKey(b.rowIndex))
+                filas[b.rowIndex] = new List<BloqueBase>();
+
+            filas[b.rowIndex].Add(b);
+        }
+    }
+
+    // ============================================================
+    //   3. DETECTAR VECINOS
+    // ============================================================
     void DetectarVecinosPorDistancia()
     {
         foreach (var b in bloques)
@@ -99,10 +118,9 @@ public class TableroManagerPosicional : MonoBehaviour
         }
     }
 
-    // ======================================================================
-    //   3. EXPLOSIÓN EN CADENA (HIERRO + FIX DEL AMARILLO)
-    // ======================================================================
-
+    // ============================================================
+    //   4. EXPLOSIÓN EN CADENA
+    // ============================================================
     public void PedirExplosion(BloqueBase bloque)
     {
         cola.Enqueue(bloque);
@@ -124,24 +142,18 @@ public class TableroManagerPosicional : MonoBehaviour
             BloqueBase left = actual.vecinoIzquierda;
             BloqueBase right = actual.vecinoDerecha;
 
-            // ==============================================================
-            //   FIX IMPORTANTE:
-            //   Si el hierro explota un AMARILLO → el amarillo rompe la fila
-            // ==============================================================
+            // Amarillo activado por hierro
             if (actual is AmarilloCube)
-            {
-                RomperFila(actual); // <-- DETONA SU FUNCIONALIDAD ANTES DE DESTRUIR
-            }
+                RomperFila(actual);
 
-            // ==============================================================
-            //   Eliminar el bloque actual
-            // ==============================================================
+            // Eliminar del tablero
             bloques.Remove(actual);
+            if (filas.ContainsKey(actual.rowIndex))
+                filas[actual.rowIndex].Remove(actual);
+
             Destroy(actual.gameObject);
 
-            // ==============================================================
-            //   Explosión en cruz del Hierro
-            // ==============================================================
+            // Hierro explota en cruz
             if (actual is BloqueHierro)
             {
                 if (up) cola.Enqueue(up);
@@ -154,48 +166,63 @@ public class TableroManagerPosicional : MonoBehaviour
         procesados.Clear();
     }
 
-    // ======================================================================
-    //   4. FUNCIONALIDAD DEL AMARILLO – ROMPER FILA COMPLETA
-    // ======================================================================
+    // ============================================================
+    //   5. ROMPER FILA (BAJAN TODAS LAS FILAS SUPERIORES)
+    // ============================================================
     public void RomperFila(BloqueBase amarillo)
-{
-    float filaZ = amarillo.transform.position.z;
-
-    List<BloqueBase> filaAEliminar = new List<BloqueBase>();
-
-    // 1. Recolectar sin destruir
-    foreach (var b in bloques)
     {
-        if (b != null && Mathf.Abs(b.transform.position.z - filaZ) < 0.1f)
-            filaAEliminar.Add(b);
-    }
+        int filaObjetivo = amarillo.rowIndex;
 
-    // 2. Remover de la lista global
-    foreach (var b in filaAEliminar)
-    {
-        bloques.Remove(b);
-    }
+        if (!filas.ContainsKey(filaObjetivo))
+            return;
 
-    // 3. Procesar funcionalidad antes de destruir
-    foreach (var b in filaAEliminar)
-    {
-        if (b is BloqueHierro)
-            cola.Enqueue(b);
+        // COPIA de los bloques a eliminar
+        List<BloqueBase> filaAEliminar = new List<BloqueBase>(filas[filaObjetivo]);
 
-        // Si fuera Amarillo extra (por explosión previa)
-        if (b is AmarilloCube && b != amarillo)
-            RomperFila(b); // romper su otra fila también
-    }
+        // 1. Quitar del tablero
+        foreach (var b in filaAEliminar)
+        {
+            bloques.Remove(b);
 
-    // 4. Ahora sí destruir (sin loops sobre transform)
-    foreach (var b in filaAEliminar)
-    {
-        if (b != null)
+            if (filas.ContainsKey(b.rowIndex))
+                filas[b.rowIndex].Remove(b);
+
+            // Si hay hierro en la fila, explota
+            if (b is BloqueHierro)
+                cola.Enqueue(b);
+
             Destroy(b.gameObject);
+        }
+
+        // 2. Remover la fila del diccionario
+        filas.Remove(filaObjetivo);
+
+        // 3. BAJAR TODAS LAS FILAS SUPERIORES
+        List<int> claves = new List<int>(filas.Keys);
+        claves.Sort(); // orden ascendente
+
+        foreach (int fila in claves)
+        {
+            if (fila > filaObjetivo)
+            {
+                List<BloqueBase> filaMover = filas[fila];
+
+                foreach (var b in filaMover)
+                {
+                    b.transform.position += new Vector3(0, 0, -1f);
+                    b.rowIndex -= 1;
+                }
+
+                // mover en diccionario
+                filas.Remove(fila);
+                filas[fila - 1] = filaMover;
+            }
+        }
+
+        // recalcular vecinos después del movimiento
+        DetectarVecinosPorDistancia();
+
+        // aplicar explosiones pendientes
+        ProcesarExplosiones();
     }
-
-    // 5. Explosiones en cadena del hierro
-    ProcesarExplosiones();
-}
-
 }

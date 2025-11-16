@@ -1,10 +1,7 @@
 using UnityEngine;
 
-public abstract class BloqueBase : MonoBehaviour
+public class BloqueBase : MonoBehaviour
 {
-    public int x = 0;
-    public int y = 0;
-
     public TableroManagerPosicional tablero;
 
     public BloqueBase vecinoArriba;
@@ -12,5 +9,7 @@ public abstract class BloqueBase : MonoBehaviour
     public BloqueBase vecinoIzquierda;
     public BloqueBase vecinoDerecha;
 
-    public abstract void Activar();
+    public int rowIndex; // fila a la que pertenece este bloque
+
+    public virtual void Activar() { }
 }
