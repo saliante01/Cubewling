@@ -23,6 +23,10 @@ public class TableroManagerPosicional : MonoBehaviour
     [Header("Efectos Visuales")]
     public GameObject vfxExplosion;
 
+    [Header("Audio Global")]
+    public AudioClip sonidoAmarilloGlobal;
+    public float volumenAmarilloGlobal = 1f;
+
     public List<BloqueBase> bloques = new List<BloqueBase>();
 
     private List<List<BloqueBase>> filas = new List<List<BloqueBase>>();
@@ -134,7 +138,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // Destrucción normal + VFX
+    // Destrucción normal + VFX + Sonido
     // ============================================================
     public void NotificarBloqueDestruido(BloqueBase b)
     {
@@ -143,10 +147,27 @@ public class TableroManagerPosicional : MonoBehaviour
         bloques.Remove(b);
         filas[f].Remove(b);
 
+        // ==== 💥 VFX ====
         if (vfxExplosion != null)
         {
             GameObject fx = Instantiate(vfxExplosion, b.transform.position, Quaternion.identity);
             Destroy(fx, 2f);
+        }
+
+        // ==== 🔊 Sonido individual del bloque ====
+        if (b.sonidoExplosion != null)
+        {
+            AudioSource.PlayClipAtPoint(b.sonidoExplosion, b.transform.position, b.volumenSonido);
+        }
+
+        // ==== 🔊 Sonido global adicional SOLO si es amarillo ====
+        if (b is AmarilloCube && sonidoAmarilloGlobal != null)
+        {
+            AudioSource.PlayClipAtPoint(
+                sonidoAmarilloGlobal,
+                Camera.main.transform.position,
+                volumenAmarilloGlobal
+            );
         }
 
         Destroy(b.gameObject);
@@ -210,7 +231,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // Colapso tipo Tetris (ahora activando hierros antes de destruir)
+    // Colapso tipo Tetris (activando hierros antes de destruir)
     // ============================================================
     IEnumerator ColapsarFilaCoroutine(int filaObjetivo, string motivo)
     {
@@ -221,22 +242,18 @@ public class TableroManagerPosicional : MonoBehaviour
 
         Debug.Log($"[TABLERO] >>> Fila {filaObjetivo} se destruye ({motivo})");
 
-        // ============================================================
-        // 1) ACTIVAR HIERROS ANTES DE DESTRUIR NADA
-        // ============================================================
+        // ==== 1) Activar hierros antes ====
         foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
         {
             if (b is BloqueHierro)
             {
-                b.Activar();  // activa explosión en cadena
+                b.Activar();
             }
         }
 
-        yield return null; // permite procesar explosiones
+        yield return null;
 
-        // ============================================================
-        // 2) DESTRUIR LO QUE QUEDE EN LA FILA
-        // ============================================================
+        // ==== 2) Destruir lo que quede ====
         foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
         {
             if (b != null)
@@ -246,9 +263,7 @@ public class TableroManagerPosicional : MonoBehaviour
         if (tiempoAntesDeBajar > 0f)
             yield return new WaitForSeconds(tiempoAntesDeBajar);
 
-        // ============================================================
-        // BAJADA DE FILAS
-        // ============================================================
+        // ==== Bajada ====
         List<BloqueBase> movidos = new List<BloqueBase>();
         List<Vector3> start = new List<Vector3>();
         List<Vector3> target = new List<Vector3>();

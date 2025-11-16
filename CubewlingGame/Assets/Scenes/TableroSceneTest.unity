@@ -572,6 +572,8 @@ MonoBehaviour:
   tiempoAntesDeBajar: 0.5
   tiempoBajada: 0.2
   vfxExplosion: {fileID: 239340880985726321, guid: c093b04d50dce1e469f436946b86bb13, type: 3}
+  sonidoAmarilloGlobal: {fileID: 8300000, guid: 3d1d84f3af63bc340badda5d52db3ca1, type: 3}
+  volumenAmarilloGlobal: 0.5
   bloques: []
 --- !u!1 &376432041
 GameObject:
@@ -2904,6 +2906,9 @@ MonoBehaviour:
   powerKey: 32
   maxPower: 20
   powerChargeSpeed: 10
+  usarParabola: 0
+  anguloLanzamiento: 25
+  potenciaVerticalExtra: 1.2
   currentPower: 0
 --- !u!23 &2872518425129689032
 MeshRenderer:
@@ -2912,7 +2917,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8742329969229497834}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -3077,8 +3082,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dynamicFriction: 0.2
   staticFriction: 0.2
-  respawnPoint: {fileID: 111327360}
-  plataformaMovimiento: {fileID: 3670898772211168763}
 --- !u!1 &6307194332471747454
 GameObject:
   m_ObjectHideFlags: 0

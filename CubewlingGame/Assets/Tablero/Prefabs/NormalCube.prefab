@@ -121,10 +121,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf06773868abc1d44a8e257806d5ed0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  x: 0
-  y: 0
   tablero: {fileID: 0}
   vecinoArriba: {fileID: 0}
   vecinoAbajo: {fileID: 0}
   vecinoIzquierda: {fileID: 0}
   vecinoDerecha: {fileID: 0}
+  rowIndex: 0
+  sonidoExplosion: {fileID: 8300000, guid: 2c9d7ebbd4da69b499242f3455698a41, type: 3}
+  volumenSonido: 1

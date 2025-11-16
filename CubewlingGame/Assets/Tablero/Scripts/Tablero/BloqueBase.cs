@@ -9,8 +9,11 @@ public class BloqueBase : MonoBehaviour
     public BloqueBase vecinoIzquierda;
     public BloqueBase vecinoDerecha;
 
-    // ID lógico de fila: 0 = más baja, 5 = más alta
-    public int rowIndex; 
+    public int rowIndex;
+
+    // 🔊 Sonido específico del bloque
+    public AudioClip sonidoExplosion;
+    public float volumenSonido = 1f;
 
     public virtual void Activar() { }
 }
