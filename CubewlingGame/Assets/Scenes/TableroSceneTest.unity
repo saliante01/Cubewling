@@ -482,7 +482,7 @@ MonoBehaviour:
   prefabNormal: {fileID: 297164793480886464, guid: c7b3dc36c1699f54fb5055361a4b80cd, type: 3}
   prefabAmarillo: {fileID: 6122005167838141859, guid: 9b0f530abf06ddd449ced2330ece57b4, type: 3}
   probabilidadHierro: 0.1
-  probabilidadAmarillo: 0.1
+  probabilidadAmarillo: 0.2
   tiempoAntesDeBajar: 0.5
   tiempoBajada: 0.2
   vfxExplosion: {fileID: 239340880985726321, guid: c093b04d50dce1e469f436946b86bb13, type: 3}
