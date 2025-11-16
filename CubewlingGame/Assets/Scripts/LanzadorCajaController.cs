@@ -16,12 +16,22 @@ public class LanzadorCajaController : MonoBehaviour
     [Tooltip("Velocidad a la que aumenta la potencia por segundo")]
     public float powerChargeSpeed = 10f;
 
+    [Header("Tiro parabólico (opcional)")]
+    public bool usarParabola = false;
+
+    [Tooltip("Ángulo del disparo parabólico (0° recto – 60° alto)")]
+    [Range(0f, 60f)]
+    public float anguloLanzamiento = 25f;
+
+    [Tooltip("Multiplicador de fuerza vertical")]
+    public float potenciaVerticalExtra = 1.2f;
+
     [Header("DEBUG (solo lectura)")]
     [SerializeField] private float currentPower = 0f;
 
     private bool hasLaunched = false;
-    private bool isCharging = false;     // si realmente está cargando
-    private bool maxReached = false;     // llegó al máximo y se congela
+    private bool isCharging = false;
+    private bool maxReached = false;
 
     private FisicasCaja boxPhysics;
 
@@ -59,7 +69,7 @@ public class LanzadorCajaController : MonoBehaviour
 
     private void HandlePowerCharge()
     {
-        // ==== INICIO CARGA ====
+        // Inicio de carga
         if (Input.GetKeyDown(powerKey))
         {
             isCharging = true;
@@ -67,17 +77,14 @@ public class LanzadorCajaController : MonoBehaviour
             currentPower = 0f;
         }
 
-        // ==== MIENTRAS SE MANTIENE PRESIONADO ====
         if (Input.GetKey(powerKey) && isCharging)
         {
-            // Si ya llegó al máximo, NO recalculamos más
             if (maxReached)
             {
                 currentPower = maxPower;
                 return;
             }
 
-            // Aumentar potencia
             currentPower += powerChargeSpeed * Time.deltaTime;
 
             if (currentPower >= maxPower)
@@ -87,11 +94,10 @@ public class LanzadorCajaController : MonoBehaviour
             }
         }
 
-        // ==== AL SOLTAR ====
+        // Al soltar
         if (Input.GetKeyUp(powerKey))
         {
             isCharging = false;
-
             Launch();
         }
     }
@@ -99,14 +105,37 @@ public class LanzadorCajaController : MonoBehaviour
     private void Launch()
     {
         hasLaunched = true;
-        boxPhysics.ApplyLaunchForce(currentPower);
+
+        // === GENERAR FUERZA DEL DISPARO ===
+        Vector3 fuerzaFinal = CalcularFuerzaDeLanzamiento();
+
+        boxPhysics.ApplyLaunchForce(fuerzaFinal);
+    }
+
+    private Vector3 CalcularFuerzaDeLanzamiento()
+    {
+        // Fuerza horizontal base
+        Vector3 forward = transform.forward * currentPower;
+
+        if (!usarParabola)
+            return forward;
+
+        // Convertimos el ángulo a radianes
+        float rad = anguloLanzamiento * Mathf.Deg2Rad;
+
+        // Componente vertical
+        float verticalForce = Mathf.Sin(rad) * currentPower * potenciaVerticalExtra;
+
+        // Disparo parabólico real
+        Vector3 final = forward;
+        final.y = verticalForce;
+
+        return final;
     }
 
     public void ResetLaunch()
     {
         hasLaunched = false;
-
-        // reset del ciclo de carga
         isCharging = false;
         maxReached = false;
         currentPower = 0f;

@@ -50,25 +50,26 @@ public class FisicasCaja : MonoBehaviour
         col.material = mat;
     }
 
-    public void ApplyLaunchForce(float power)
-    {
-        if (launched) return;
-        launched = true;
+public void ApplyLaunchForce(Vector3 fuerza)
+{
+    if (launched) return;
+    launched = true;
 
-        // IMPORTANTE: Al lanzar, dejamos de ser hijo
-        transform.SetParent(null);
+    // Quitamos parent
+    transform.SetParent(null);
 
-        rb.isKinematic = false;
+    rb.isKinematic = false;
 
-        // Impulso recto hacia adelante
-        Vector3 force = transform.forward * power;
-        rb.AddForce(force, ForceMode.Impulse);
+    // Aplicamos fuerza compuesta
+    rb.AddForce(fuerza, ForceMode.Impulse);
 
-        // Habilitar la detección SOLO al lanzar
-        DetectorCajaDetenida detector = GetComponent<DetectorCajaDetenida>();
-        if (detector != null)
-            detector.EnableDetection();
-    }
+    // Activamos detección
+    DetectorCajaDetenida detector = GetComponent<DetectorCajaDetenida>();
+    if (detector != null)
+        detector.EnableDetection();
+}
+
+
 
     // ============================================================
     // RESET — RUTINA MULTIFRAME CORRECTA
