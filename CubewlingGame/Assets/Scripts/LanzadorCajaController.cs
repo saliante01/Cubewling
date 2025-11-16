@@ -27,7 +27,7 @@ public class LanzadorCajaController : MonoBehaviour
     public float potenciaVerticalExtra = 1.2f;
 
     [Header("DEBUG (solo lectura)")]
-    [SerializeField] private float currentPower = 0f;
+    public float currentPower = 0f;
 
     private bool hasLaunched = false;
     private bool isCharging = false;
