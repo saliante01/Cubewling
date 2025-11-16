@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PowerSliderUI : MonoBehaviour
+public class ParabolaSliderUI : MonoBehaviour
 {
     public Slider slider;
     public LanzadorCajaController lanzador;
@@ -10,13 +10,14 @@ public class PowerSliderUI : MonoBehaviour
     {
         if (slider == null)
             slider = GetComponent<Slider>();
+
+        slider.minValue = lanzador.parabolaMin;
+        slider.maxValue = lanzador.parabolaMax;
     }
 
     private void Update()
     {
-        if (lanzador == null) return;
-
-        slider.maxValue = lanzador.maxPower;
-        slider.value = lanzador.CurrentPower;
+        if (lanzador != null)
+            slider.value = lanzador.parabolaAngle;
     }
 }

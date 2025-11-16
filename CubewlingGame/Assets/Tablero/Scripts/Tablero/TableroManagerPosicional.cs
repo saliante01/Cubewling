@@ -94,15 +94,54 @@ public class TableroManagerPosicional : MonoBehaviour
         return b;
     }
 
-    GameObject ElegirPrefabAleatorio()
+GameObject ElegirPrefabAleatorio()
+{
+    float puntos = 0f;
+
+    if (ScoreManager.Instance != null)
+        puntos = ScoreManager.Instance.GetScore();
+
+    // ===== RANGO DE AJUSTE =====
+    float minScore = 2000f;
+    float maxScore = 20000f;
+
+    // ===== PROBABILIDADES BASE =====
+    float baseHierro = probabilidadHierro;   // Ej: 0.10
+    float baseAmarillo = probabilidadAmarillo; // Ej: 0.20
+
+    // ===== PROBABILIDADES MÁXIMAS =====
+    float maxHierro = 0.50f;
+    float maxAmarillo = 0.09f;
+
+    float t = 0f;
+
+    // ===== CALCULAR T EXPONENCIAL =====
+    if (puntos >= minScore)
     {
-        float r = Random.value;
-
-        if (r < probabilidadAmarillo) return prefabAmarillo;
-        if (r < probabilidadAmarillo + probabilidadHierro) return prefabHierro;
-
-        return prefabNormal;
+        t = Mathf.InverseLerp(minScore, maxScore, puntos);
+        t = Mathf.Pow(t, 2f);  // ← curva exponencial suave
     }
+
+    // ===== PROBABILIDADES DINÁMICAS =====
+    float hierroActual = Mathf.Lerp(baseHierro, maxHierro, t);
+    float amarilloActual = Mathf.Lerp(baseAmarillo, maxAmarillo, t);
+
+    // IMPORTANTE: evitar que amarillo + hierro > 1
+    amarilloActual = Mathf.Clamp01(amarilloActual);
+    hierroActual = Mathf.Clamp01(hierroActual);
+
+    // ===== LÓGICA FINAL DE APARICIÓN =====
+    float r = Random.value;
+
+    if (r < amarilloActual) 
+        return prefabAmarillo;
+
+    if (r < amarilloActual + hierroActual) 
+        return prefabHierro;
+
+    return prefabNormal;
+}
+
 
     void DetectarVecinosPorDistancia()
     {

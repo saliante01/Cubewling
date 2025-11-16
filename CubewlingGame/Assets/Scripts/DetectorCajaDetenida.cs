@@ -51,27 +51,35 @@ public class DetectorCajaDetenida : MonoBehaviour
         }
     }
 
-    private void ExplodeTouchedBlocksAtStop()
+private void ExplodeTouchedBlocksAtStop()
+{
+    Collider boxCol = GetComponent<Collider>();
+
+    Vector3 center = boxCol.bounds.center;
+    Vector3 halfExtents = boxCol.bounds.extents * 1.1f;
+
+    Collider[] hits = Physics.OverlapBox(center, halfExtents, transform.rotation);
+
+    Debug.Log("CUBOS DETECTADOS: " + hits.Length);
+
+    bool explotoAlgo = false;
+
+    foreach (Collider col in hits)
     {
-        Collider boxCol = GetComponent<Collider>();
-
-        Vector3 center = boxCol.bounds.center;
-        Vector3 halfExtents = boxCol.bounds.extents * 1.1f;
-
-        Collider[] hits = Physics.OverlapBox(center, halfExtents, transform.rotation);
-
-        Debug.Log("CUBOS DETECTADOS: " + hits.Length);
-
-        foreach (Collider col in hits)
+        BloqueBase b = col.GetComponent<BloqueBase>();
+        if (b != null)
         {
-            BloqueBase b = col.GetComponent<BloqueBase>();
-            if (b != null)
-            {
-                Debug.Log("Activando cubo: " + b.name);
-                b.Activar();
-            }
+            explotoAlgo = true;
+            Debug.Log("Activando cubo: " + b.name);
+            b.Activar();
         }
     }
+
+    // ==== NUEVO: Recuperar solo 1 tiro si explotó AL MENOS 1 ====
+    if (explotoAlgo)
+        TirosManager.Instance.RecuperarTiro();
+}
+
 
     private void ResetBoxDelayed()
     {

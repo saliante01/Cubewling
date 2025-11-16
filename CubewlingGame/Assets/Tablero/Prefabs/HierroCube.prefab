@@ -129,3 +129,4 @@ MonoBehaviour:
   rowIndex: 0
   sonidoExplosion: {fileID: 8300000, guid: 408a878873b15a748ae7afce766b0ce8, type: 3}
   volumenSonido: 0.5
+  puntos: 50

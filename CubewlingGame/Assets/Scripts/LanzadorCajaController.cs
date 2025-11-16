@@ -2,142 +2,99 @@ using UnityEngine;
 
 public class LanzadorCajaController : MonoBehaviour
 {
-    [Header("Movimiento horizontal")]
-    public float horizontalSpeed = 5f;
-    public float minX = -5f;
-    public float maxX = 5f;
+    [Header("Potencia")]
+    public float maxPower = 9f;
+    public float powerSpeed = 15f;
+    private float currentPower = 0f;
+    public float CurrentPower => currentPower;
 
-    [Header("Carga de potencia")]
-    public KeyCode powerKey = KeyCode.Space;
+    [Header("Parábola")]
+    public float parabolaAngle = 0f;
+    public float parabolaMin = -20f;
+    public float parabolaMax = 20f;
+    public bool puedeElegirParabola = true;
 
-    [Tooltip("Potencia máxima que se puede cargar")]
-    public float maxPower = 20f;
-
-    [Tooltip("Velocidad a la que aumenta la potencia por segundo")]
-    public float powerChargeSpeed = 10f;
-
-    [Header("Tiro parabólico (opcional)")]
-    public bool usarParabola = false;
-
-    [Tooltip("Ángulo del disparo parabólico (0° recto – 60° alto)")]
-    [Range(0f, 60f)]
-    public float anguloLanzamiento = 25f;
-
-    [Tooltip("Multiplicador de fuerza vertical")]
-    public float potenciaVerticalExtra = 1.2f;
-
-    [Header("DEBUG (solo lectura)")]
-    public float currentPower = 0f;
-
+    private bool charging = false;
     private bool hasLaunched = false;
-    private bool isCharging = false;
-    private bool maxReached = false;
 
     private FisicasCaja boxPhysics;
 
-    private void Start()
+    private void Awake()
     {
         boxPhysics = GetComponent<FisicasCaja>();
-
-        if (boxPhysics == null)
-            Debug.LogError("FisicasCaja no está adjunto.");
     }
 
     private void Update()
     {
         if (hasLaunched) return;
 
-        HandleHorizontalMovement();
-        HandlePowerCharge();
-    }
-
-    private void HandleHorizontalMovement()
-    {
-        float dir = 0f;
-
-        if (Input.GetKey(KeyCode.LeftArrow)) dir = -1f;
-        if (Input.GetKey(KeyCode.RightArrow)) dir = 1f;
-
-        if (dir != 0f)
+        // --- AJUSTAR PARÁBOLA ---
+        if (puedeElegirParabola)
         {
-            Vector3 pos = transform.position;
-            pos.x += dir * horizontalSpeed * Time.deltaTime;
-            pos.x = Mathf.Clamp(pos.x, minX, maxX);
-            transform.position = pos;
-        }
-    }
+            if (Input.GetKey(KeyCode.LeftArrow))
+                parabolaAngle -= 20f * Time.deltaTime;
 
-    private void HandlePowerCharge()
-    {
-        // Inicio de carga
-        if (Input.GetKeyDown(powerKey))
-        {
-            isCharging = true;
-            maxReached = false;
-            currentPower = 0f;
+            if (Input.GetKey(KeyCode.RightArrow))
+                parabolaAngle += 20f * Time.deltaTime;
+
+            parabolaAngle = Mathf.Clamp(parabolaAngle, parabolaMin, parabolaMax);
         }
 
-        if (Input.GetKey(powerKey) && isCharging)
+        // --- CARGA DE POTENCIA ---
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            if (maxReached)
-            {
-                currentPower = maxPower;
-                return;
-            }
-
-            currentPower += powerChargeSpeed * Time.deltaTime;
-
-            if (currentPower >= maxPower)
-            {
-                currentPower = maxPower;
-                maxReached = true;
-            }
+            charging = true;
         }
 
-        // Al soltar
-        if (Input.GetKeyUp(powerKey))
+        if (charging)
         {
-            isCharging = false;
+            currentPower += powerSpeed * Time.deltaTime;
+            currentPower = Mathf.Clamp(currentPower, 0f, maxPower);
+        }
+
+        // --- LANZAMIENTO ---
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            charging = false;
             Launch();
         }
     }
 
     private void Launch()
     {
+        if (!TirosManager.Instance.CanShoot())
+        {
+            Debug.Log("NO HAY TIROS DISPONIBLES");
+            return;
+        }
+
         hasLaunched = true;
+        puedeElegirParabola = false;
 
-        // === GENERAR FUERZA DEL DISPARO ===
-        Vector3 fuerzaFinal = CalcularFuerzaDeLanzamiento();
+        TirosManager.Instance.ConsumirTiro();
 
-        boxPhysics.ApplyLaunchForce(fuerzaFinal);
+        Vector3 fuerza = CalcularFuerzaDeLanzamiento();
+        boxPhysics.ApplyLaunchForce(fuerza);
+
+        currentPower = 0f;
     }
 
     private Vector3 CalcularFuerzaDeLanzamiento()
     {
-        // Fuerza horizontal base
-        Vector3 forward = transform.forward * currentPower;
+        Vector3 fuerza = transform.forward * currentPower;
 
-        if (!usarParabola)
-            return forward;
+        // aplicar parábola
+        fuerza.y += parabolaAngle;
 
-        // Convertimos el ángulo a radianes
-        float rad = anguloLanzamiento * Mathf.Deg2Rad;
-
-        // Componente vertical
-        float verticalForce = Mathf.Sin(rad) * currentPower * potenciaVerticalExtra;
-
-        // Disparo parabólico real
-        Vector3 final = forward;
-        final.y = verticalForce;
-
-        return final;
+        return fuerza;
     }
 
     public void ResetLaunch()
     {
         hasLaunched = false;
-        isCharging = false;
-        maxReached = false;
         currentPower = 0f;
+
+        // volver a permitir ajustar parábola
+        puedeElegirParabola = true;
     }
 }

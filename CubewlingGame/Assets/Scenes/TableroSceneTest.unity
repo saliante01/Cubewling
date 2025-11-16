@@ -2539,8 +2539,8 @@ Transform:
   m_GameObject: {fileID: 1488356745}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.7289, y: -2.96, z: 10.19}
-  m_LocalScale: {x: 11.327802, y: 2.6366, z: 6.7362}
+  m_LocalPosition: {x: 0.7289, y: -2.96, z: 36.0512}
+  m_LocalScale: {x: 11.327802, y: 2.6366, z: 58.458763}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2730,6 +2730,67 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1694849511}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1700529664
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1700529666}
+  - component: {fileID: 1700529665}
+  - component: {fileID: 1700529667}
+  m_Layer: 0
+  m_Name: TirosManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1700529665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700529664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f76275c8ac5f23e4b83827cb94cce522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tirosMaximos: 5
+  tirosActuales: 0
+--- !u!4 &1700529666
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700529664}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 933.66315, y: 888.2266, z: -462.31604}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1700529667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700529664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67a0f09db382eda4c877d198201833ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slider: {fileID: 0}
+  lanzador: {fileID: 2133481399483068874}
 --- !u!1 &1718226789
 GameObject:
   m_ObjectHideFlags: 0
@@ -3038,8 +3099,8 @@ Transform:
   m_GameObject: {fileID: 1772331693}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7099972, z: -0, w: 0.7042046}
-  m_LocalPosition: {x: 6, y: -3.01, z: 7.05}
-  m_LocalScale: {x: 16.739092, y: 2.6366, z: 6.7362}
+  m_LocalPosition: {x: 5.834, y: -3.01, z: 27.3193}
+  m_LocalScale: {x: 57.2795, y: 2.6366, z: 6.7362}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3426,7 +3487,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1981909567}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8481a5e2ed1f32469c4458e9161b58c, type: 3}
   m_Name: 
@@ -3534,8 +3595,8 @@ Transform:
   m_GameObject: {fileID: 2043656082}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7099972, z: -0, w: 0.7042046}
-  m_LocalPosition: {x: 1.1394, y: -3.01, z: 6.9652}
-  m_LocalScale: {x: 16.739092, y: 2.6366, z: 15.334959}
+  m_LocalPosition: {x: 0.9116, y: -3.01, z: 34.7765}
+  m_LocalScale: {x: 72.36309, y: 2.6366, z: 15.334959}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3851,16 +3912,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bd290de247b1e343a7a91cdba5a63e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  horizontalSpeed: 5
-  minX: -5
-  maxX: 5
-  powerKey: 32
-  maxPower: 20
-  powerChargeSpeed: 10
-  usarParabola: 0
-  anguloLanzamiento: 25
-  potenciaVerticalExtra: 1.2
-  currentPower: 0
+  maxPower: 9
+  powerSpeed: 15
+  parabolaAngle: 0
+  parabolaMin: -20
+  parabolaMax: 20
+  puedeElegirParabola: 1
 --- !u!23 &2872518425129689032
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4228,3 +4285,4 @@ SceneRoots:
   - {fileID: 746074152}
   - {fileID: 1616330017}
   - {fileID: 1408150581}
+  - {fileID: 1700529666}

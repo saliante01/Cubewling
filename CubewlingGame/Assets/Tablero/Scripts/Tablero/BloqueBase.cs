@@ -14,6 +14,6 @@ public class BloqueBase : MonoBehaviour
     // 🔊 Sonido específico del bloque
     public AudioClip sonidoExplosion;
     public float volumenSonido = 1f;
-
+    public int puntos;
     public virtual void Activar() { }
 }
