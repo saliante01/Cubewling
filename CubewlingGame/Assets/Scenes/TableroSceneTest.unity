@@ -573,7 +573,7 @@ MonoBehaviour:
   tiempoBajada: 0.2
   vfxExplosion: {fileID: 239340880985726321, guid: c093b04d50dce1e469f436946b86bb13, type: 3}
   sonidoAmarilloGlobal: {fileID: 8300000, guid: 3d1d84f3af63bc340badda5d52db3ca1, type: 3}
-  volumenAmarilloGlobal: 0.5
+  volumenAmarilloGlobal: 0.2
   bloques: []
 --- !u!1 &376432041
 GameObject:
@@ -3100,6 +3100,7 @@ GameObject:
   - component: {fileID: 9007036354978631225}
   - component: {fileID: 9007036354978631226}
   - component: {fileID: 9007036354978631227}
+  - component: {fileID: 9007036354978631228}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -3241,6 +3242,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc98fd390e000b34daf85629146dd9dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &9007036354978631228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6307194332471747454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd1f4c496c3449c4cafbe7210896eaf7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  deslizarEntrada: {fileID: 8300000, guid: 74183ab416bbe4f4da8533f9333fdf65, type: 3}
+  deslizarLoop: {fileID: 8300000, guid: bd7ed97584911bf4fa992fa046329c35, type: 3}
+  deslizarSalida: {fileID: 8300000, guid: a2ab631335d78844eb03cf1952efc74d, type: 3}
+  velocidadLoopThreshold: 0.6
+  velocidadSalidaObjective: 0.1
+  volumenEntrada: 0.5
+  volumenLoop: 0.5
+  volumenSalida: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -19,6 +19,9 @@ public class FisicasCaja : MonoBehaviour
     private Vector3 initialPosition;
     private Quaternion initialRotation;
 
+    // ===== SISTEMA NUEVO DE AUDIO =====
+    private CajaSlideAudioController slideAudio;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -38,6 +41,9 @@ public class FisicasCaja : MonoBehaviour
         rb.isKinematic = true;
 
         SetupSlidingPhysics();
+
+        // Obtener referencia al sistema de audio
+        slideAudio = GetComponent<CajaSlideAudioController>();
     }
 
     private void SetupSlidingPhysics()
@@ -50,26 +56,31 @@ public class FisicasCaja : MonoBehaviour
         col.material = mat;
     }
 
-public void ApplyLaunchForce(Vector3 fuerza)
-{
-    if (launched) return;
-    launched = true;
+    // ============================================================
+    // APLICACIÓN DE FUERZA DE LANZAMIENTO
+    // ============================================================
+    public void ApplyLaunchForce(Vector3 fuerza)
+    {
+        if (launched) return;
+        launched = true;
 
-    // Quitamos parent
-    transform.SetParent(null);
+        // Quitamos parent
+        transform.SetParent(null);
 
-    rb.isKinematic = false;
+        rb.isKinematic = false;
 
-    // Aplicamos fuerza compuesta
-    rb.AddForce(fuerza, ForceMode.Impulse);
+        // Aplicamos fuerza compuesta
+        rb.AddForce(fuerza, ForceMode.Impulse);
 
-    // Activamos detección
-    DetectorCajaDetenida detector = GetComponent<DetectorCajaDetenida>();
-    if (detector != null)
-        detector.EnableDetection();
-}
+        // === AUDIO DE ENTRADA ===
+        if (slideAudio != null)
+            slideAudio.OnLaunch(fuerza.magnitude);
 
-
+        // Activamos detección de detención
+        DetectorCajaDetenida detector = GetComponent<DetectorCajaDetenida>();
+        if (detector != null)
+            detector.EnableDetection();
+    }
 
     // ============================================================
     // RESET — RUTINA MULTIFRAME CORRECTA
@@ -96,6 +107,10 @@ public void ApplyLaunchForce(Vector3 fuerza)
         transform.localRotation = Quaternion.identity;
 
         yield return null;
+
+        // === AUDIO: detener loop y resetear flags ===
+        if (slideAudio != null)
+            slideAudio.OnReset();
 
         // Fase 4 — resetear lanzador
         LanzadorCajaController launcher = GetComponent<LanzadorCajaController>();
