@@ -485,6 +485,7 @@ MonoBehaviour:
   probabilidadAmarillo: 0.1
   tiempoAntesDeBajar: 0.5
   tiempoBajada: 0.2
+  vfxExplosion: {fileID: 239340880985726321, guid: c093b04d50dce1e469f436946b86bb13, type: 3}
   bloques: []
 --- !u!1 &376432041
 GameObject:

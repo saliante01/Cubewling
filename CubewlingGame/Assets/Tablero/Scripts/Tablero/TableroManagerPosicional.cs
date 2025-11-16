@@ -20,12 +20,12 @@ public class TableroManagerPosicional : MonoBehaviour
     public float tiempoAntesDeBajar = 0.25f;
     public float tiempoBajada = 0.15f;
 
+    [Header("Efectos Visuales")]
+    public GameObject vfxExplosion;   // <= 🔥 VFX agregado
+
     public List<BloqueBase> bloques = new List<BloqueBase>();
 
-    // Filas lógicas fijas
     private List<List<BloqueBase>> filas = new List<List<BloqueBase>>();
-
-    // Marcadores exactos de cada fila y columna
     private List<List<Transform>> marcadores = new List<List<Transform>>();
 
     private Queue<BloqueBase> cola = new Queue<BloqueBase>();
@@ -42,9 +42,6 @@ public class TableroManagerPosicional : MonoBehaviour
         LogEstadoFilas("Estado inicial");
     }
 
-    // ============================================================
-    // 1. Inicializar filas y marcadores
-    // ============================================================
     void InicializarEstructuraFilas()
     {
         filas.Clear();
@@ -64,9 +61,6 @@ public class TableroManagerPosicional : MonoBehaviour
         }
     }
 
-    // ============================================================
-    // 2. Instanciar bloques iniciales con escala correcta
-    // ============================================================
     void InstanciarBloquesTablero()
     {
         bloques.Clear();
@@ -82,15 +76,11 @@ public class TableroManagerPosicional : MonoBehaviour
         }
     }
 
-    // ============================================================
-    // 3. Crear bloque correctamente alineado y con escala correcta
-    // ============================================================
     BloqueBase CrearBloqueEnFila(int filaID, Vector3 pos, Transform marcador)
     {
         GameObject prefab = ElegirPrefabAleatorio();
         GameObject obj = Instantiate(prefab, pos, Quaternion.identity);
 
-        // 🔥 Escala correcta según el marcador
         obj.transform.localScale = marcador.localScale;
 
         BloqueBase b = obj.GetComponent<BloqueBase>();
@@ -110,9 +100,6 @@ public class TableroManagerPosicional : MonoBehaviour
         return prefabNormal;
     }
 
-    // ============================================================
-    // 4. Vecinos del bloque (hierro)
-    // ============================================================
     void DetectarVecinosPorDistancia()
     {
         foreach (var b in bloques)
@@ -147,15 +134,26 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 5. Destrucción individual (Normal)
+    // 5. Destrucción individual (Normal) + VFX
     // ============================================================
     public void NotificarBloqueDestruido(BloqueBase b)
     {
         int f = b.rowIndex;
 
+        // Quitar de listas
         bloques.Remove(b);
         filas[f].Remove(b);
 
+        // ==== 💥 VFX de explosión ====
+        if (vfxExplosion != null)
+        {
+            GameObject fx = Instantiate(vfxExplosion, b.transform.position, Quaternion.identity);
+
+            // Si tu VFX no se autodestruye
+            Destroy(fx, 2f);
+        }
+
+        // Destruir el cubo real
         Destroy(b.gameObject);
 
         Debug.Log($"[TABLERO] Bloque destruido en fila {f}. Quedan {filas[f].Count}.");
@@ -217,7 +215,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 8. COLAPSO TIPO TETRIS CON ALINEACIÓN PERFECTA
+    // 8. Colapso tipo Tetris
     // ============================================================
     IEnumerator ColapsarFilaCoroutine(int filaObjetivo, string motivo)
     {
@@ -228,13 +226,12 @@ public class TableroManagerPosicional : MonoBehaviour
 
         Debug.Log($"[TABLERO] >>> Fila {filaObjetivo} se destruye ({motivo})");
 
-        // Eliminar bloques restantes
-        foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
-        {
-            bloques.Remove(b);
-            filas[filaObjetivo].Remove(b);
-            Destroy(b.gameObject);
-        }
+        // Eliminar bloques restantes con VFX incluído
+    foreach (var b in new List<BloqueBase>(filas[filaObjetivo]))
+    {
+        NotificarBloqueDestruido(b);   // 🔥 ahora sí aparece el VFX
+    }
+
 
         if (tiempoAntesDeBajar > 0f)
             yield return new WaitForSeconds(tiempoAntesDeBajar);
@@ -248,12 +245,10 @@ public class TableroManagerPosicional : MonoBehaviour
         for (int i = 0; i < TotalFilas; i++)
             nueva.Add(new List<BloqueBase>());
 
-        // Filas inferiores se copian tal cual
         for (int f = 0; f < filaObjetivo; f++)
             foreach (var b in filas[f])
                 nueva[f].Add(b);
 
-        // Filas superiores bajan una fila
         for (int f = filaObjetivo + 1; f < TotalFilas; f++)
         {
             int nuevoID = f - 1;
@@ -275,7 +270,6 @@ public class TableroManagerPosicional : MonoBehaviour
 
         filas = nueva;
 
-        // Animación hacia los marcadores
         float t = 0;
         while (t < tiempoBajada)
         {
@@ -300,7 +294,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 9. Refill de filas vacías con escala correcta
+    // 9. Refill
     // ============================================================
     IEnumerator RefillFilasVacias()
     {
@@ -321,7 +315,6 @@ public class TableroManagerPosicional : MonoBehaviour
             {
                 BloqueBase nuevo = CrearBloqueEnFila(filaID, m.position, m);
 
-                // animación pop-in (desde 0 hasta la escala real)
                 Vector3 escalaFinal = m.localScale;
                 nuevo.transform.localScale = Vector3.zero;
 
@@ -337,7 +330,7 @@ public class TableroManagerPosicional : MonoBehaviour
     }
 
     // ============================================================
-    // 10. Animación pop-in correcta (respeta escala final)
+    // 10. Animación pop-in
     // ============================================================
     IEnumerator AnimarSpawn(Transform t, Vector3 escalaFinal)
     {
@@ -359,9 +352,6 @@ public class TableroManagerPosicional : MonoBehaviour
         t.localScale = escalaFinal;
     }
 
-    // ============================================================
-    // 11. Log del estado del tablero
-    // ============================================================
     void LogEstadoFilas(string msg)
     {
         List<int> llenas = new List<int>();
